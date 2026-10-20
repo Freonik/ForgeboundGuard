@@ -8,6 +8,7 @@ A companion to [Forgebound](https://github.com/Freonik/Forgebound), but it works
 - [AI moderator](#ai-moderator)
 - [Strikes and mutes](#strikes-and-mutes)
 - [Watchdog](#watchdog)
+- [X-ray hints](#x-ray-hints)
 - [Log bridge](#log-bridge)
 - [Commands and permissions](#commands-and-permissions)
 - [License](#license)
@@ -85,13 +86,34 @@ Admins with `guard.notify` are told in chat when:
 
 Each kind of alert comes at most once every 5 minutes.
 
+## X-ray hints
+
+Guard counts the **diamond and ancient debris veins** a player finds against the plain stone, deepslate and
+netherrack they mine. With x-ray you dig straight to the ores, so you find many veins for very little stone.
+When it's clearly too many (6 diamond veins with less than 80 stone each, 5 debris veins with less than 100,
+within 45 minutes; all in the config), admins with `guard.notify` get a message: hover shows the finds with
+coordinates, click teleports to the player. Every find is written to `mining.log`.
+
+Nothing is punished automatically: mining in caves or blowing up debris with TNT/beds can look the same, so it's
+a hint to have a look, not a verdict. Ores placed by players don't count.
+
+**`/guard check <player>`** shows where the player is (click to teleport), health, game mode, ping, how many
+diamonds and netherite they carry (and in their ender chest), what they mined since the restart with the last finds,
+and whether they're muted. For offline players: when they were last online.
+
+**Recommended together with:**
+- Paper's built-in anti-xray: `config/paper-world-defaults.yml` → `anticheat.anti-xray.enabled: true`
+  (hides ores the player can't see),
+- [Grim Anticheat](https://modrinth.com/plugin/grimac) for movement and combat cheats. Its alerts go to the
+  console, so the log bridge sends them to GitHub as well.
+
 ## Log bridge
 
 Sends the server console log and `moderation.log` to a **private GitHub repository** every 5 minutes, so you
 (or Claude, when you ask it) can read what happened without access to the server. It's free: only the GitHub API
 is used. Player IP addresses are hidden (`185.12.x.x`).
 
-In the repository: `console/2026-10-20.log` (one file per day) and `moderation.log`. Daily files are kept for
+In the repository: `console/2026-10-20.log` (one file per day), `moderation.log` and `mining.log`. Daily files are kept for
 7 days on the server and 30 days on GitHub (`keep-days-server`, `keep-days-github`).
 
 **Setup**
@@ -111,6 +133,7 @@ Never share the config with the token in it.
 |---|---|
 | `/guard` | status: filter, AI, watchdog, how many players are muted |
 | `/guard ai on\|off` | switch the AI moderator on or off |
+| `/guard check <player>` | where the player is, what they carry and mined, mutes |
 | `/guard mute <player> [minutes]` | mute a player (10 minutes by default) |
 | `/guard unmute <player>` | unmute a player and clear their strikes |
 | `/guard modlog [player]` | the last 10 moderation actions |

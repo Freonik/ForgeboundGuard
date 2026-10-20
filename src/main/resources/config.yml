@@ -84,6 +84,28 @@ watchdog:
   cooldown-seconds: 300
 
 # ------------------------------------------------------------
+#  X-RAY HINTS
+#  Counts the diamond / ancient debris VEINS a player finds against the plain stone they mine (stone, deepslate,
+#  netherrack...). With x-ray you dig straight to the ores, so you find many veins for little stone.
+#  Too many veins for too little stone within the window = admins (guard.notify) get a message with the
+#  finds and a click-to-teleport. Nothing is punished automatically: caves and TNT/bed mining for debris can
+#  look the same, so have a look first. Every find is in plugins/ForgeboundGuard/mining.log.
+#  Tip: also turn on Paper's own anti-xray (config/paper-world-defaults.yml -> anticheat.anti-xray.enabled: true)
+#  and use Grim Anticheat for movement/combat cheats; with Grim's alerts printed to the console they end up in
+#  the log bridge too.
+# ------------------------------------------------------------
+mining:
+  enabled: true
+  window-minutes: 45
+  alert-cooldown-minutes: 15
+  diamond:
+    min-veins: 6
+    stone-per-vein: 80
+  ancient_debris:
+    min-veins: 5
+    stone-per-vein: 100
+
+# ------------------------------------------------------------
 #  LOG BRIDGE
 #  Sends the server console log (logs/latest.log) and moderation.log to a PRIVATE GitHub repository every few
 #  minutes, so you can read them (or let Claude read them) without access to the server. Free (GitHub API).
@@ -105,6 +127,7 @@ log-bridge:
   keep-days-github: 30
   console: true
   moderation: true
+  mining: true
 
 # ------------------------------------------------------------
 #  AUTO-UPDATE

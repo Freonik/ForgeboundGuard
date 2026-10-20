@@ -20,13 +20,14 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
  * Sends the server's logs to a private GitHub repository, so someone who isn't on the server (e.g. Claude, when the
  * owner asks) can read what happened. Every few minutes the new lines of logs/latest.log are added to
- * console/YYYY-MM-DD.log, and moderation.log is copied as it is. Player IP addresses are hidden.
+ * console/YYYY-MM-DD.log, and moderation.log / mining.log are copied (their last ~2000 lines). Player IP addresses are hidden.
  * Free: it uses the GitHub API with the owner's token, nothing else.
  */
 public final class LogBridge {
@@ -100,10 +101,10 @@ public final class LogBridge {
             if (plugin.getConfig().getBoolean("log-bridge.console", true)) {
                 sent += console();
             }
-            if (plugin.getConfig().getBoolean("log-bridge.moderation", true)) {
-                File mod = new File(plugin.getDataFolder(), "moderation.log");
-                if (mod.isFile()) {
-                    sent += upload("moderation.log", hide(Files.readString(mod.toPath(), StandardCharsets.UTF_8)), true);
+            for (String name : List.of("moderation", "mining")) {
+                File f = new File(plugin.getDataFolder(), name + ".log");
+                if (plugin.getConfig().getBoolean("log-bridge." + name, true) && f.isFile()) {
+                    sent += upload(name + ".log", hide(tail(Files.readString(f.toPath(), StandardCharsets.UTF_8))), true);
                 }
             }
             lastResult = "ok at " + java.time.LocalTime.now().withNano(0) + (sent == 0 ? " (nothing new)" : "");
@@ -200,6 +201,12 @@ public final class LogBridge {
         } catch (java.time.format.DateTimeParseException ex) {
             return null;
         }
+    }
+
+    /** the last ~2000 lines (moderation.log / mining.log grow forever) */
+    static String tail(String text) {
+        String[] lines = text.split("\n", -1);
+        return lines.length <= 2001 ? text : String.join("\n", java.util.Arrays.copyOfRange(lines, lines.length - 2001, lines.length));
     }
 
     /** "185.12.33.4:51234" -> "185.12.x.x" */

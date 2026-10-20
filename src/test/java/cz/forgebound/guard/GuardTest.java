@@ -24,7 +24,7 @@ class GuardTest {
     @Test
     void configHasEverySection() throws Exception {
         Map<String, Object> config = yaml("config.yml");
-        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "log-bridge", "auto-update", "messages")) {
+        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "mining", "log-bridge", "auto-update", "messages")) {
             assertTrue(config.containsKey(key), "config.yml is missing " + key);
         }
         @SuppressWarnings("unchecked")
@@ -93,5 +93,23 @@ class GuardTest {
         assertEquals("1.2.0", Updater.version("v1.2.0-build.4"));
         assertTrue(Updater.compare("v1.2.0-build.4", "1.1.1") > 0);
         assertEquals(0, Updater.compare("v1.1.1-build.3", "1.1.1"));
+    }
+
+    @Test
+    void xrayRatio() {
+        assertFalse(MiningWatch.suspicious(3, 50, 6, 80), "too few veins to say anything");
+        assertTrue(MiningWatch.suspicious(8, 200, 6, 80), "8 veins with 200 stone");
+        assertFalse(MiningWatch.suspicious(8, 900, 6, 80), "normal branch mining");
+    }
+
+    @Test
+    void logTail() {
+        StringBuilder big = new StringBuilder();
+        for (int i = 0; i < 5000; i++) {
+            big.append("line ").append(i).append('\n');
+        }
+        String t = LogBridge.tail(big.toString());
+        assertTrue(t.startsWith("line 3000"), t.substring(0, 20));
+        assertEquals("short", LogBridge.tail("short"));
     }
 }

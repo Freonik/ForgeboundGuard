@@ -39,6 +39,7 @@ public final class ForgeboundGuard extends JavaPlugin {
     private Watchdog watchdog;
     private LogBridge logs;
     private Updater updater;
+    private MiningWatch mining;
     private final ExecutorService io = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "ForgeboundGuard-IO");
         t.setDaemon(true);
@@ -59,6 +60,8 @@ public final class ForgeboundGuard extends JavaPlugin {
         watchdog.start();
         logs = new LogBridge(this);
         logs.start();
+        mining = new MiningWatch(this);
+        getServer().getPluginManager().registerEvents(mining, this);
         updater = new Updater(this);
         getServer().getPluginManager().registerEvents(updater, this);
         updater.start();
@@ -176,6 +179,12 @@ public final class ForgeboundGuard extends JavaPlugin {
                 logs.now(ctx.getSource().getSender());
                 return Command.SINGLE_SUCCESS;
             })));
+            root.then(Commands.literal("check")
+                    .then(Commands.argument("player", StringArgumentType.word()).suggests(this::players)
+                            .executes(ctx -> {
+                                mining.check(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "player"));
+                                return Command.SINGLE_SUCCESS;
+                            })));
             root.then(Commands.literal("mute")
                     .then(Commands.argument("player", StringArgumentType.word()).suggests(this::players)
                             .executes(ctx -> mod(ctx, "mute", 10))
@@ -230,6 +239,8 @@ public final class ForgeboundGuard extends JavaPlugin {
         String ai = moderation.aiReady() ? "&aon &8(" + getConfig().getString("ai.model") + ")"
                 : getConfig().getBoolean("ai.enabled") ? "&eon, but no API key" : "&coff";
         sender.sendMessage(color("&7AI moderator: " + ai + " &8- /guard ai on|off"));
+        sender.sendMessage(color("&7X-ray hints: " + (getConfig().getBoolean("mining.enabled", true) ? "&aon" : "&coff")
+                + " &8- /guard check <player>"));
         sender.sendMessage(color("&7Watchdog: " + (getConfig().getBoolean("watchdog.enabled", true) ? "&aon" : "&coff")));
         sender.sendMessage(color("&7Log bridge: " + (logs.enabled() ? "&aon &8(" + logs.lastResult() + ")" : "&coff")
                 + " &8- /guard logs now"));
@@ -239,6 +250,10 @@ public final class ForgeboundGuard extends JavaPlugin {
     }
 
     // ================================================================ helpers
+
+    public ModerationManager moderation() {
+        return moderation;
+    }
 
     /** This plugin's jar in plugins/ (for the updater). */
     public File jarFile() {
