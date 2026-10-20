@@ -38,6 +38,7 @@ public final class ForgeboundGuard extends JavaPlugin {
     private ModerationManager moderation;
     private Watchdog watchdog;
     private LogBridge logs;
+    private Updater updater;
     private final ExecutorService io = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "ForgeboundGuard-IO");
         t.setDaemon(true);
@@ -58,6 +59,9 @@ public final class ForgeboundGuard extends JavaPlugin {
         watchdog.start();
         logs = new LogBridge(this);
         logs.start();
+        updater = new Updater(this);
+        getServer().getPluginManager().registerEvents(updater, this);
+        updater.start();
         registerCommands();
         getLogger().info("Chat filter " + (moderation.enabled() ? "on" : "off") + ", AI moderator "
                 + (moderation.aiReady() ? "on" : getConfig().getBoolean("ai.enabled") ? "on but has no API key" : "off") + ".");
@@ -74,6 +78,9 @@ public final class ForgeboundGuard extends JavaPlugin {
         if (logs != null) {
             logs.stop();
         }
+        if (updater != null) {
+            updater.stop();
+        }
         io.shutdown();
         try {
             io.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
@@ -87,6 +94,7 @@ public final class ForgeboundGuard extends JavaPlugin {
         moderation.start();
         watchdog.start();
         logs.start();
+        updater.start();
     }
 
     // ================================================================ moving over from Forgebound 2.5
@@ -219,6 +227,11 @@ public final class ForgeboundGuard extends JavaPlugin {
     }
 
     // ================================================================ helpers
+
+    /** This plugin's jar in plugins/ (for the updater). */
+    public File jarFile() {
+        return getFile();
+    }
 
     public static Component color(String text) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(text)

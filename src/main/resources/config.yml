@@ -107,6 +107,18 @@ log-bridge:
   moderation: true
 
 # ------------------------------------------------------------
+#  AUTO-UPDATE
+#  Every few hours Guard looks for a newer release on GitHub and downloads it into plugins/update/;
+#  Paper swaps it in on the next restart. Admins (guard.admin) are told.
+# ------------------------------------------------------------
+auto-update:
+  enabled: true
+  # false = only tell the admins that a new version is out
+  download: true
+  check-hours: 6
+  repo: "Freonik/ForgeboundGuard"
+
+# ------------------------------------------------------------
 #  MESSAGES
 # ------------------------------------------------------------
 messages:

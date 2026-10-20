@@ -24,7 +24,7 @@ class GuardTest {
     @Test
     void configHasEverySection() throws Exception {
         Map<String, Object> config = yaml("config.yml");
-        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "log-bridge", "messages")) {
+        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "log-bridge", "auto-update", "messages")) {
             assertTrue(config.containsKey(key), "config.yml is missing " + key);
         }
         @SuppressWarnings("unchecked")
@@ -86,5 +86,12 @@ class GuardTest {
         assertEquals(java.time.LocalDate.of(2026, 10, 20), LogBridge.day("2026-10-20.log"));
         assertEquals(null, LogBridge.day("moderation.log"));
         assertEquals(null, LogBridge.day("2026-10-20.txt"));
+    }
+
+    @Test
+    void versions() {
+        assertEquals("1.2.0", Updater.version("v1.2.0-build.4"));
+        assertTrue(Updater.compare("v1.2.0-build.4", "1.1.1") > 0);
+        assertEquals(0, Updater.compare("v1.1.1-build.3", "1.1.1"));
     }
 }

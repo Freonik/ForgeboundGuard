@@ -20,6 +20,9 @@ A companion to [Forgebound](https://github.com/Freonik/Forgebound), but it works
 2. Put it into `plugins/` and restart the server.
 3. Settings are in `plugins/ForgeboundGuard/config.yml`. After a change: `/guard reload`.
 
+**Auto-update:** every 6 hours Guard checks for a newer release, downloads it into `plugins/update/` and tells the
+admins; it's used after the next restart. Turn it off with `auto-update.enabled: false`.
+
 > **Coming from Forgebound 2.5?** The moderation used to be part of Forgebound. On its first start, Guard takes over
 > your settings (including the API key), active mutes and `moderation.log` from `plugins/Forgebound/`.
 > Update Forgebound to 2.6+, which no longer has the moderation, so the chat isn't checked twice.
