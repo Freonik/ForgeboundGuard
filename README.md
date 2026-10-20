@@ -133,6 +133,7 @@ Never share the config with the token in it.
 |---|---|
 | `/guard` | status: filter, AI, watchdog, how many players are muted |
 | `/guard ai on\|off` | switch the AI moderator on or off |
+| `/guard ai test <message>` | ask the AI about a message right now (nobody is punished): checks the key and how strict it is |
 | `/guard check <player>` | where the player is, what they carry and mined, mutes |
 | `/guard mute <player> [minutes]` | mute a player (10 minutes by default) |
 | `/guard unmute <player>` | unmute a player and clear their strikes |

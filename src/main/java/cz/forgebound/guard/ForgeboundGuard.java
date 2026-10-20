@@ -162,6 +162,11 @@ public final class ForgeboundGuard extends JavaPlugin {
                 return status(ctx.getSource().getSender());
             }));
             root.then(Commands.literal("ai")
+                    .then(Commands.literal("test").then(Commands.argument("message", StringArgumentType.greedyString())
+                            .executes(ctx -> {
+                                moderation.test(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "message"));
+                                return Command.SINGLE_SUCCESS;
+                            })))
                     .then(Commands.literal("on").executes(ctx -> ai(ctx.getSource().getSender(), true)))
                     .then(Commands.literal("off").executes(ctx -> ai(ctx.getSource().getSender(), false))));
             var update = Commands.literal("update").executes(ctx -> {
