@@ -33,7 +33,7 @@ filter:
   # l33t speak and s.p.a.c.i.n.g; end an entry with $ to match the whole word only.
   blocked-words: []
   # these send the message to the AI (if it's on), which decides by context; without the AI they do nothing
-  suspicious-words: [debil, kreten, idiot, magor, blbec, kokot, curak, mrd, zmrd, kurv, "pice$", picus, jeb,
+  suspicious-words: [debil, kreten, idiot, magor, blbec, kokot, kund, pica, svine, sracka, "zmrd", mrdka, curak, mrd, zmrd, kurv, "pice$", picus, jeb,
     hajzl, buzna, buzerant, teplous, niger, niga, cigan, retard, autist, "kys$", "zabij se", chcip, umri,
     nenavidim, zabiju, "tvoje mama", "tvoje mamka", "kde bydlis", adresa, "fuck you", whore, slut, "fag$",
     nazi, hitler, rape, znasil]

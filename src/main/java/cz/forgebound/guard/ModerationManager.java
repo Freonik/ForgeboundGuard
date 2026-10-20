@@ -73,6 +73,7 @@ public final class ModerationManager implements Listener {
     private final Map<UUID, Integer> strikes = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastStrike = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> mutes = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastFilterStrike = new ConcurrentHashMap<>();
     private BukkitTask task;
     private volatile boolean busy;
     private volatile long aiDisabledUntil;
@@ -131,6 +132,8 @@ public final class ModerationManager implements Listener {
     public void start() {
         stop();
         filter.settings(settings());
+        aiDisabledUntil = 0;                         // a reload after fixing the key tries the AI again right away
+        lastAiWarning = 0;
         long every = Math.max(5, num("ai.batch-seconds", 20)) * 20L;
         task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::flush, every, every);
     }
@@ -185,8 +188,17 @@ public final class ModerationManager implements Listener {
                     default -> "blocked word";
                 };
                 boolean strike = result.verdict() != ChatFilter.Verdict.LINK && result.verdict() != ChatFilter.Verdict.REPEAT;
+                // one burst of spam = one strike, not one per message
+                Long lastFilter = lastFilterStrike.get(player.getUniqueId());
+                if (strike && lastFilter != null && now - lastFilter < 15_000) {
+                    strike = false;
+                }
+                if (strike) {
+                    lastFilterStrike.put(player.getUniqueId(), now);
+                }
+                String action = strike ? "warn" : "block";
                 Bukkit.getScheduler().runTask(plugin, () -> punish(player.getUniqueId(), player.getName(), text,
-                        strike ? "warn" : "block", reason, "filter"));
+                        action, reason, "filter"));
             }
         }
     }
