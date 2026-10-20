@@ -1,0 +1,58 @@
+name: Build plugin
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create releases
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build plugin (with tests)
+        run: mvn -B clean package
+
+      - name: Start a real Paper server with the plugin
+        run: bash .github/smoke-test.sh
+
+      - name: Version
+        run: echo "VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeboundGuard-${{ env.VERSION }}
+          path: target/ForgeboundGuard.jar
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # every build gets its own tag (tags can't be reused); the newest is always "Latest"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"; EXTRA="--generate-notes"
+          else
+            TAG="v${VERSION}-build.${GITHUB_RUN_NUMBER}"; EXTRA="--target $GITHUB_SHA"
+          fi
+          cat > notes.md <<NOTES
+          **Forgebound Guard ${VERSION}** for Paper 1.21.11 (Java 21)
+
+          Put \`ForgeboundGuard.jar\` into \`plugins/\` and restart. Works with or without Forgebound.
+          The AI moderator stays off until you add an API key, see the README.
+
+          Built from commit ${GITHUB_SHA::7}.
+          NOTES
+          gh release create "$TAG" target/ForgeboundGuard.jar --title "Forgebound Guard ${VERSION} (build ${GITHUB_RUN_NUMBER})" \
+            --notes-file notes.md --latest $EXTRA

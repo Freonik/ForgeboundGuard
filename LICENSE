@@ -1,0 +1,23 @@
+Copyright (c) 2026 Freonik. All rights reserved.
+
+This repository, including its source code, configuration and documentation (together "the Software"),
+is the property of the copyright holder.
+
+You MAY:
+  - download the released plugin (ForgeboundGuard.jar) and run it on your own Minecraft server;
+  - change the settings in config.yml for your own server.
+
+You MAY NOT, without prior written permission from the copyright holder:
+  - copy, modify, adapt, translate or create derivative works of the Software or any part of it;
+  - redistribute, publish, sublicense, sell or rent the Software or any modified version of it;
+  - reuse the source code in other projects;
+  - remove or alter this notice or any copyright notices.
+
+The optional AI moderator sends chat messages to a third-party service (Anthropic) using the server
+owner's own API key. The server owner is responsible for telling players about it and for the use
+of that service under its terms.
+
+Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL
+THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.

@@ -1,0 +1,95 @@
+# ============================================================
+#  Forgebound Guard - chat moderation and server watchdog
+#  1. a free filter (spam, repeats, links, server ads, blocked words, CAPS -> lowercase)
+#  2. optional AI (Claude Haiku via the Anthropic API): only messages with a "suspicious" word are sent to it,
+#     in small batches, and it decides by context (a joke between friends vs. a real insult)
+#  Warnings give strikes; enough strikes = mute (longer each time). Bans are never automatic, the AI can only
+#  suggest one to the admins. Admins with guard.notify see every action (hover = the message).
+#  Everything is logged in plugins/ForgeboundGuard/moderation.log.
+#  Commands: /guard (status), /guard ai on|off, /guard mute|unmute|modlog <player>, /guard reload
+#  guard.bypass = not checked (give it to staff if you want).
+# ============================================================
+
+enabled: true
+# commands a muted player can't use either
+muted-blocks-commands: [msg, tell, w, whisper, m, me, r, reply, pm, dm]
+filter:
+  caps:
+    enabled: true
+    min-letters: 8
+    max-percent: 70
+  # more than "messages" messages within "seconds" = spam
+  flood:
+    messages: 5
+    seconds: 8
+  # the same message again within this many seconds is not sent
+  repeat-seconds: 30
+  links:
+    block: true
+    allowed: [youtube.com, youtu.be, twitch.tv, imgur.com, minecraft.wiki]
+  # IP addresses and "play.something.cz"-style server addresses
+  advertising: true
+  # never allowed, no AI needed (a warning each time). Matches the start of words, ignores accents,
+  # l33t speak and s.p.a.c.i.n.g; end an entry with $ to match the whole word only.
+  blocked-words: []
+  # these send the message to the AI (if it's on), which decides by context; without the AI they do nothing
+  suspicious-words: [debil, kreten, idiot, magor, blbec, kokot, curak, mrd, zmrd, kurv, "pice$", picus, jeb,
+    hajzl, buzna, buzerant, teplous, niger, niga, cigan, retard, autist, "kys$", "zabij se", chcip, umri,
+    nenavidim, zabiju, "tvoje mama", "tvoje mamka", "kde bydlis", adresa, "fuck you", whore, slut, "fag$",
+    nazi, hitler, rape, znasil]
+strikes:
+  # warnings before an automatic mute
+  to-mute: 3
+  # strikes are forgotten after this long without a new one
+  forget-after-minutes: 60
+  # 1st, 2nd, 3rd+ mute
+  mute-minutes: [5, 15, 60]
+ai:
+  # needs an API key from console.anthropic.com (prepaid credit). Leave the key empty to use only the filter.
+  # Instead of writing it here you can set the ANTHROPIC_API_KEY environment variable on the server.
+  # Never share this config with the key in it.
+  enabled: false
+  api-key: ""
+  model: "claude-haiku-5-5"
+  # suspicious messages are collected and sent together every N seconds (fewer requests = cheaper)
+  batch-seconds: 20
+  # how many earlier chat lines the AI sees as context
+  context-messages: 8
+  timeout-seconds: 25
+  # warn | mute = the most the AI may do on its own (it can always suggest a ban to admins);
+  # notify = the AI only tells the admins
+  max-action: mute
+  # remove the message from everyone's chat when the AI warns or mutes (works with signed chat)
+  delete-messages: true
+  reason-language: Czech
+  # extra rules for the AI, in plain words
+  rules:
+    - "No insulting other players, no racism, no sexual content."
+    - "No sharing anyone's real name, address or photos."
+  # shown to players on join while the AI is on (players should know their chat is checked)
+  join-notice: "&8Chat is checked by an AI moderator."
+
+# ------------------------------------------------------------
+#  WATCHDOG
+#  Tells admins (forgebound.moderation.notify) in game when TPS drops, memory is almost full or a plugin
+#  throws errors. Each kind of alert at most once per cooldown.
+# ------------------------------------------------------------
+watchdog:
+  enabled: true
+  tps-below: 15
+  # with low TPS, also show the chunk with the most entities if it has at least this many
+  entities-hint-from: 100
+  memory-above-percent: 90
+  plugin-errors: true
+  cooldown-seconds: 300
+
+# ------------------------------------------------------------
+#  MESSAGES
+# ------------------------------------------------------------
+messages:
+  prefix: ""
+  mod-muted: "&cYou are muted for another {time}."
+  mod-muted-now: "&c🔇 You are muted for {minutes} min: &7{reason}"
+  mod-unmuted: "&aYou can chat again."
+  mod-blocked: "&cMessage not sent: &7{reason}"
+  mod-warned: "&c⚠ Warning ({strikes}/{max}): &7{reason}"

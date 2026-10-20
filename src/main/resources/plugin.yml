@@ -1,0 +1,19 @@
+name: ForgeboundGuard
+version: '${project.version}'
+main: cz.forgebound.guard.ForgeboundGuard
+api-version: '1.21.11'
+description: Chat moderation (free filter + optional AI moderator) and server watchdog alerts. Works with or without Forgebound.
+authors: [ filip ]
+softdepend: [Forgebound]
+
+# /guard is registered in code (Brigadier), with suggestions in the chat.
+permissions:
+  guard.admin:
+    description: /guard status, ai, mute, unmute, modlog, reload
+    default: op
+  guard.notify:
+    description: See moderation actions and watchdog alerts in chat
+    default: op
+  guard.bypass:
+    description: Chat isn't checked by the filter or the AI
+    default: false
