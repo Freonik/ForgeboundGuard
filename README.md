@@ -88,7 +88,8 @@ Sends the server console log and `moderation.log` to a **private GitHub reposito
 (or Claude, when you ask it) can read what happened without access to the server. It's free: only the GitHub API
 is used. Player IP addresses are hidden (`185.12.x.x`).
 
-In the repository: `console/2026-10-20.log` (one file per day) and `moderation.log`.
+In the repository: `console/2026-10-20.log` (one file per day) and `moderation.log`. Daily files are kept for
+7 days on the server and 30 days on GitHub (`keep-days-server`, `keep-days-github`).
 
 **Setup**
 1. Create a **private** repository, e.g. `ForgeboundGuard-logs`.

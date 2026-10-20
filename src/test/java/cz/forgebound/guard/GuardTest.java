@@ -80,4 +80,11 @@ class GuardTest {
         assertEquals(Boolean.FALSE, bridge.get("enabled"));
         assertEquals("", bridge.get("token"));
     }
+
+    @Test
+    void dailyFileNames() {
+        assertEquals(java.time.LocalDate.of(2026, 10, 20), LogBridge.day("2026-10-20.log"));
+        assertEquals(null, LogBridge.day("moderation.log"));
+        assertEquals(null, LogBridge.day("2026-10-20.txt"));
+    }
 }

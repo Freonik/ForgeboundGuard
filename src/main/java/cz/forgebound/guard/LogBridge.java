@@ -41,6 +41,7 @@ public final class LogBridge {
     private volatile String lastResult = "not run yet";
     /** how far latest.log was already sent */
     private long position;
+    private LocalDate lastCleanup;
     /** remote path -> blob sha (needed to overwrite a file on GitHub) */
     private final Map<String, String> shas = new HashMap<>();
 
@@ -95,6 +96,7 @@ public final class LogBridge {
         busy = true;
         try {
             int sent = 0;
+            cleanup();
             if (plugin.getConfig().getBoolean("log-bridge.console", true)) {
                 sent += console();
             }
@@ -146,6 +148,58 @@ public final class LogBridge {
         Files.writeString(local.toPath(), hide(fresh), StandardCharsets.UTF_8,
                 java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
         return upload(name, Files.readString(local.toPath(), StandardCharsets.UTF_8), false);
+    }
+
+    /** Once a day: old daily files go away - here after log-bridge.keep-days-server, on GitHub after keep-days-github. */
+    private void cleanup() throws IOException, InterruptedException {
+        LocalDate today = LocalDate.now();
+        if (today.equals(lastCleanup)) {
+            return;
+        }
+        lastCleanup = today;
+        int keepHere = Math.max(1, plugin.getConfig().getInt("log-bridge.keep-days-server", 7));
+        File[] local = new File(state, "console").listFiles();
+        if (local != null) {
+            for (File f : local) {
+                LocalDate day = day(f.getName());
+                if (day != null && day.isBefore(today.minusDays(keepHere - 1L))) {
+                    Files.deleteIfExists(f.toPath());
+                }
+            }
+        }
+        int keepThere = plugin.getConfig().getInt("log-bridge.keep-days-github", 30);
+        if (keepThere <= 0) {
+            return;                                          // 0 = keep everything on GitHub
+        }
+        String repo = cfg("repo", "");
+        HttpResponse<String> list = http.send(request("https://api.github.com/repos/" + repo + "/contents/console").GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        if (list.statusCode() != 200) {
+            return;
+        }
+        for (var e : JsonParser.parseString(list.body()).getAsJsonArray()) {
+            JsonObject f = e.getAsJsonObject();
+            LocalDate day = day(f.get("name").getAsString());
+            if (day == null || !day.isBefore(today.minusDays(keepThere - 1L))) {
+                continue;
+            }
+            JsonObject body = new JsonObject();
+            body.addProperty("message", "remove old logs " + f.get("name").getAsString());
+            body.addProperty("sha", f.get("sha").getAsString());
+            http.send(request("https://api.github.com/repos/" + repo + "/contents/console/" + f.get("name").getAsString())
+                    .method("DELETE", HttpRequest.BodyPublishers.ofString(body.toString())).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            shas.remove("console/" + f.get("name").getAsString());
+        }
+    }
+
+    /** "2026-10-20.log" -> the date, anything else -> null */
+    static LocalDate day(String fileName) {
+        try {
+            return fileName.endsWith(".log") ? LocalDate.parse(fileName.substring(0, fileName.length() - 4)) : null;
+        } catch (java.time.format.DateTimeParseException ex) {
+            return null;
+        }
     }
 
     /** "185.12.33.4:51234" -> "185.12.x.x" */
