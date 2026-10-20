@@ -161,6 +161,17 @@ public final class ForgeboundGuard extends JavaPlugin {
             root.then(Commands.literal("ai")
                     .then(Commands.literal("on").executes(ctx -> ai(ctx.getSource().getSender(), true)))
                     .then(Commands.literal("off").executes(ctx -> ai(ctx.getSource().getSender(), false))));
+            var update = Commands.literal("update").executes(ctx -> {
+                updater.command(ctx.getSource().getSender(), "now");
+                return Command.SINGLE_SUCCESS;
+            });
+            for (String sub : List.of("on", "off", "now")) {
+                update.then(Commands.literal(sub).executes(ctx -> {
+                    updater.command(ctx.getSource().getSender(), sub);
+                    return Command.SINGLE_SUCCESS;
+                }));
+            }
+            root.then(update);
             root.then(Commands.literal("logs").then(Commands.literal("now").executes(ctx -> {
                 logs.now(ctx.getSource().getSender());
                 return Command.SINGLE_SUCCESS;
@@ -222,6 +233,7 @@ public final class ForgeboundGuard extends JavaPlugin {
         sender.sendMessage(color("&7Watchdog: " + (getConfig().getBoolean("watchdog.enabled", true) ? "&aon" : "&coff")));
         sender.sendMessage(color("&7Log bridge: " + (logs.enabled() ? "&aon &8(" + logs.lastResult() + ")" : "&coff")
                 + " &8- /guard logs now"));
+        sender.sendMessage(color("&7Auto-update: " + (updater.enabled() ? "&aon" : "&coff") + " &8- /guard update on|off|now"));
         sender.sendMessage(color("&7Muted right now: &f" + moderation.mutedCount() + " &8- /guard modlog"));
         return Command.SINGLE_SUCCESS;
     }

@@ -21,7 +21,7 @@ A companion to [Forgebound](https://github.com/Freonik/Forgebound), but it works
 3. Settings are in `plugins/ForgeboundGuard/config.yml`. After a change: `/guard reload`.
 
 **Auto-update:** every 6 hours Guard checks for a newer release, downloads it into `plugins/update/` and tells the
-admins; it's used after the next restart. Turn it off with `auto-update.enabled: false`.
+admins; it's used after the next restart. Turn it off with **`/guard update off`** (`/guard update now` checks right away).
 
 > **Coming from Forgebound 2.5?** The moderation used to be part of Forgebound. On its first start, Guard takes over
 > your settings (including the API key), active mutes and `moderation.log` from `plugins/Forgebound/`.
@@ -114,6 +114,7 @@ Never share the config with the token in it.
 | `/guard mute <player> [minutes]` | mute a player (10 minutes by default) |
 | `/guard unmute <player>` | unmute a player and clear their strikes |
 | `/guard modlog [player]` | the last 10 moderation actions |
+| `/guard update on\|off\|now` | auto-update on/off, or check for a new version now |
 | `/guard logs now` | send the logs to GitHub right now |
 | `/guard reload` | reload the config |
 

@@ -64,6 +64,36 @@ public final class Updater implements Listener {
         task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::check, 20L * 60, every);
     }
 
+    /** /guard update on|off|now */
+    public void command(org.bukkit.command.CommandSender sender, String what) {
+        switch (what) {
+            case "on", "off" -> {
+                plugin.getConfig().set("auto-update.enabled", what.equals("on"));
+                plugin.saveConfig();
+                start();
+                sender.sendMessage(ForgeboundGuard.color(what.equals("on")
+                        ? "&aAuto-update on &7(checks every " + plugin.getConfig().getInt("auto-update.check-hours", 6) + " h)."
+                        : "&7Auto-update off. &8Nothing will be downloaded."));
+            }
+            default -> {
+                sender.sendMessage(ForgeboundGuard.color("&7Checking for a new version..."));
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    String before = pending;
+                    check();
+                    String after = pending;
+                    Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(ForgeboundGuard.color(
+                            after != null && !after.equals(before) ? "&8[&6Update&8] " + after
+                                    : downloaded != null ? "&aVersion &f" + downloaded + " &ais already downloaded, restart to use it."
+                                    : "&7You have the newest version &8(" + plugin.getPluginMeta().getVersion() + ")")));
+                });
+            }
+        }
+    }
+
+    public boolean enabled() {
+        return on("enabled", true);
+    }
+
     public void stop() {
         if (task != null) {
             task.cancel();
