@@ -37,6 +37,7 @@ public final class ForgeboundGuard extends JavaPlugin {
 
     private ModerationManager moderation;
     private Watchdog watchdog;
+    private LogBridge logs;
     private final ExecutorService io = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "ForgeboundGuard-IO");
         t.setDaemon(true);
@@ -55,6 +56,8 @@ public final class ForgeboundGuard extends JavaPlugin {
         watchdog = new Watchdog(this);
         getServer().getPluginManager().registerEvents(watchdog, this);
         watchdog.start();
+        logs = new LogBridge(this);
+        logs.start();
         registerCommands();
         getLogger().info("Chat filter " + (moderation.enabled() ? "on" : "off") + ", AI moderator "
                 + (moderation.aiReady() ? "on" : getConfig().getBoolean("ai.enabled") ? "on but has no API key" : "off") + ".");
@@ -68,6 +71,9 @@ public final class ForgeboundGuard extends JavaPlugin {
         if (watchdog != null) {
             watchdog.stop();
         }
+        if (logs != null) {
+            logs.stop();
+        }
         io.shutdown();
         try {
             io.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
@@ -80,6 +86,7 @@ public final class ForgeboundGuard extends JavaPlugin {
         reloadConfig();
         moderation.start();
         watchdog.start();
+        logs.start();
     }
 
     // ================================================================ moving over from Forgebound 2.5
@@ -146,6 +153,10 @@ public final class ForgeboundGuard extends JavaPlugin {
             root.then(Commands.literal("ai")
                     .then(Commands.literal("on").executes(ctx -> ai(ctx.getSource().getSender(), true)))
                     .then(Commands.literal("off").executes(ctx -> ai(ctx.getSource().getSender(), false))));
+            root.then(Commands.literal("logs").then(Commands.literal("now").executes(ctx -> {
+                logs.now(ctx.getSource().getSender());
+                return Command.SINGLE_SUCCESS;
+            })));
             root.then(Commands.literal("mute")
                     .then(Commands.argument("player", StringArgumentType.word()).suggests(this::players)
                             .executes(ctx -> mod(ctx, "mute", 10))
@@ -201,6 +212,8 @@ public final class ForgeboundGuard extends JavaPlugin {
                 : getConfig().getBoolean("ai.enabled") ? "&eon, but no API key" : "&coff";
         sender.sendMessage(color("&7AI moderator: " + ai + " &8- /guard ai on|off"));
         sender.sendMessage(color("&7Watchdog: " + (getConfig().getBoolean("watchdog.enabled", true) ? "&aon" : "&coff")));
+        sender.sendMessage(color("&7Log bridge: " + (logs.enabled() ? "&aon &8(" + logs.lastResult() + ")" : "&coff")
+                + " &8- /guard logs now"));
         sender.sendMessage(color("&7Muted right now: &f" + moderation.mutedCount() + " &8- /guard modlog"));
         return Command.SINGLE_SUCCESS;
     }

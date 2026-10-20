@@ -8,6 +8,7 @@ A companion to [Forgebound](https://github.com/Freonik/Forgebound), but it works
 - [AI moderator](#ai-moderator)
 - [Strikes and mutes](#strikes-and-mutes)
 - [Watchdog](#watchdog)
+- [Log bridge](#log-bridge)
 - [Commands and permissions](#commands-and-permissions)
 - [License](#license)
 
@@ -81,6 +82,23 @@ Admins with `guard.notify` are told in chat when:
 
 Each kind of alert comes at most once every 5 minutes.
 
+## Log bridge
+
+Sends the server console log and `moderation.log` to a **private GitHub repository** every 5 minutes, so you
+(or Claude, when you ask it) can read what happened without access to the server. It's free: only the GitHub API
+is used. Player IP addresses are hidden (`185.12.x.x`).
+
+In the repository: `console/2026-10-20.log` (one file per day) and `moderation.log`.
+
+**Setup**
+1. Create a **private** repository, e.g. `ForgeboundGuard-logs`.
+2. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate new token:
+   *Repository access* → **Only select repositories** → that repository; *Permissions* → **Contents: Read and write**.
+3. In `config.yml`: `log-bridge.enabled: true`, the `token` and `repo: "YourName/ForgeboundGuard-logs"`.
+4. `/guard reload`, then `/guard logs now` to test it. `/guard` shows when it last worked.
+
+Never share the config with the token in it.
+
 ---
 
 ## Commands and permissions
@@ -92,6 +110,7 @@ Each kind of alert comes at most once every 5 minutes.
 | `/guard mute <player> [minutes]` | mute a player (10 minutes by default) |
 | `/guard unmute <player>` | unmute a player and clear their strikes |
 | `/guard modlog [player]` | the last 10 moderation actions |
+| `/guard logs now` | send the logs to GitHub right now |
 | `/guard reload` | reload the config |
 
 | Permission | Default | |

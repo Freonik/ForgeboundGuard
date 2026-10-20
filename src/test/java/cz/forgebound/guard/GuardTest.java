@@ -24,7 +24,7 @@ class GuardTest {
     @Test
     void configHasEverySection() throws Exception {
         Map<String, Object> config = yaml("config.yml");
-        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "messages")) {
+        for (String key : List.of("enabled", "filter", "strikes", "ai", "watchdog", "log-bridge", "messages")) {
             assertTrue(config.containsKey(key), "config.yml is missing " + key);
         }
         @SuppressWarnings("unchecked")
@@ -65,5 +65,19 @@ class GuardTest {
     void time() {
         assertEquals("5:00", ForgeboundGuard.time(300_000));
         assertEquals("1:02:03", ForgeboundGuard.time(3_723_000));
+    }
+
+    @Test
+    void ipAddressesAreHidden() {
+        assertEquals("Pepa[/185.12.x.x] logged in", LogBridge.hide("Pepa[/185.12.33.4:51234] logged in"));
+        assertEquals("no ip here 1.21.11", LogBridge.hide("no ip here 1.21.11"));
+    }
+
+    @Test
+    void logBridgeShipsWithoutAToken() throws Exception {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> bridge = (Map<String, Object>) yaml("config.yml").get("log-bridge");
+        assertEquals(Boolean.FALSE, bridge.get("enabled"));
+        assertEquals("", bridge.get("token"));
     }
 }

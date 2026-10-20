@@ -84,6 +84,26 @@ watchdog:
   cooldown-seconds: 300
 
 # ------------------------------------------------------------
+#  LOG BRIDGE
+#  Sends the server console log (logs/latest.log) and moderation.log to a PRIVATE GitHub repository every few
+#  minutes, so you can read them (or let Claude read them) without access to the server. Free (GitHub API).
+#  Files in the repository: console/YYYY-MM-DD.log and moderation.log. Player IP addresses are hidden.
+#  Setup:
+#   1. create a private repository on GitHub, e.g. ForgeboundGuard-logs
+#   2. GitHub -> Settings -> Developer settings -> Fine-grained tokens -> Generate new token:
+#      Repository access: "Only select repositories" -> that repository; Permissions: Contents = Read and write
+#   3. put the token and "owner/repository" below, then /guard reload and /guard logs now
+#  Never share this config with the token in it.
+# ------------------------------------------------------------
+log-bridge:
+  enabled: false
+  token: ""
+  repo: "Freonik/ForgeboundGuard-logs"
+  interval-minutes: 5
+  console: true
+  moderation: true
+
+# ------------------------------------------------------------
 #  MESSAGES
 # ------------------------------------------------------------
 messages:
