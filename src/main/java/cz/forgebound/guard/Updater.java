@@ -42,6 +42,8 @@ public final class Updater implements Listener {
     /** what admins should hear about on join (e.g. "restart to update") */
     private volatile String pending;
     private volatile String downloaded;
+    /** why the last check didn't work, or null */
+    private volatile String lastError;
 
     public Updater(ForgeboundGuard plugin) {
         this.plugin = plugin;
@@ -84,6 +86,7 @@ public final class Updater implements Listener {
                     Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(ForgeboundGuard.color(
                             after != null && !after.equals(before) ? "&8[&6Update&8] " + after
                                     : downloaded != null ? "&aVersion &f" + downloaded + " &ais already downloaded, restart to use it."
+                                    : lastError != null ? "&cCouldn't check for updates: &7" + lastError
                                     : "&7You have the newest version &8(" + plugin.getPluginMeta().getVersion() + ")")));
                 });
             }
@@ -108,8 +111,10 @@ public final class Updater implements Listener {
             HttpResponse<String> res = http.send(get("https://api.github.com/repos/" + repo + "/releases/latest"),
                     HttpResponse.BodyHandlers.ofString());
             if (res.statusCode() != 200) {
+                lastError = res.statusCode() == 404 ? "the repository isn't public (HTTP 404)" : "HTTP " + res.statusCode();
                 return;
             }
+            lastError = null;
             JsonObject release = JsonParser.parseString(res.body()).getAsJsonObject();
             String tag = release.get("tag_name").getAsString();
             String latest = version(tag);
@@ -122,6 +127,7 @@ public final class Updater implements Listener {
                 update(repo, tag, latest, release);
             }
         } catch (Exception ex) {
+            lastError = ex.getClass().getSimpleName();
             plugin.getLogger().fine("Update check failed: " + ex.getMessage());
         }
     }

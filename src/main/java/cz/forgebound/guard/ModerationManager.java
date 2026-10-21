@@ -77,6 +77,7 @@ public final class ModerationManager implements Listener {
     private BukkitTask task;
     private volatile boolean busy;
     private volatile long aiDisabledUntil;
+    private volatile boolean thinkingOff = true;
     private long lastAiWarning;
 
     record Line(int id, UUID uuid, String name, String text, long at, SignedMessage signed, String hint) {
@@ -288,6 +289,12 @@ public final class ModerationManager implements Listener {
                 aiProblem("AI moderation: the API key was refused (HTTP " + res.statusCode() + "). Check ai.api-key in the ForgeboundGuard config.", 3600);
                 return;
             }
+            if (res.statusCode() == 400 && thinkingOff && res.body().contains("thinking")) {
+                thinkingOff = false;                         // this model doesn't take the setting: send without it
+                plugin.getLogger().info("AI moderation: the model doesn't accept thinking=disabled, sending without it.");
+                queue.addAll(batch);
+                return;
+            }
             if (res.statusCode() == 400 && res.body().contains("credit")) {
                 aiProblem("AI moderation: no API credit left. Only the free filter is running.", 3600);
                 return;
@@ -304,6 +311,10 @@ public final class ModerationManager implements Listener {
 
     /** One console line per AI batch, so it's visible what the AI decided (or that its answer was unreadable). */
     private void report(List<Line> batch, List<Verdict> verdicts, String body) {
+        if (verdicts.isEmpty() && body.contains("\"stop_reason\":\"max_tokens\"")) {
+            plugin.getLogger().warning("AI moderation: the AI's answer was cut off (max_tokens).");
+            return;
+        }
         if (verdicts.isEmpty()) {
             plugin.getLogger().warning("AI moderation: couldn't read the AI's answer: "
                     + body.replaceAll("\\s+", " ").substring(0, Math.min(300, body.length())));
@@ -399,7 +410,14 @@ public final class ModerationManager implements Listener {
         }
         JsonObject body = new JsonObject();
         body.addProperty("model", cfg("ai.model", "claude-haiku-5-5"));
-        body.addProperty("max_tokens", 60 + 50 * batch.size());
+        body.addProperty("max_tokens", 300 + 80 * batch.size());
+        // no extended thinking: a verdict on a chat line doesn't need it, and thinking used up the whole
+        // token budget so the actual answer was never written (Haiku 5.5 thinks by default)
+        if (thinkingOff) {
+            JsonObject thinking = new JsonObject();
+            thinking.addProperty("type", "disabled");
+            body.add("thinking", thinking);
+        }
         body.addProperty("system", system.toString());
         JsonArray messages = new JsonArray();
         JsonObject msg = new JsonObject();
