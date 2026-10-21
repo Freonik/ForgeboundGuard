@@ -112,4 +112,11 @@ class GuardTest {
         assertTrue(t.startsWith("line 3000"), t.substring(0, 20));
         assertEquals("short", LogBridge.tail("short"));
     }
+
+    @Test
+    void dataFileNames() throws Exception {
+        // regression: the files were once saved as plain "yml" / "log"
+        String src = Files.readString(Path.of("src/main/java/cz/forgebound/guard/ModerationManager.java"));
+        assertTrue(src.contains("\"moderation.yml\"") && src.contains("\"moderation.log\""));
+    }
 }

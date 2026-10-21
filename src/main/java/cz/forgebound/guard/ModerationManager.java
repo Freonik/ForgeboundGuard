@@ -86,9 +86,36 @@ public final class ModerationManager implements Listener {
     public ModerationManager(ForgeboundGuard plugin) {
         this.plugin = plugin;
         this.filter = new ChatFilter(settings());
-        this.file = new File(plugin.getDataFolder(), "yml");
-        this.logFile = new File(plugin.getDataFolder(), "log");
+        this.file = new File(plugin.getDataFolder(), "moderation.yml");
+        this.logFile = new File(plugin.getDataFolder(), "moderation.log");
+        fixOldNames();
         load();
+    }
+
+    /** 1.1.0 - 1.3.3 saved these as plugins/ForgeboundGuard/yml and /log by mistake: move them to the right names. */
+    private void fixOldNames() {
+        File oldYml = new File(plugin.getDataFolder(), "yml");
+        File oldLog = new File(plugin.getDataFolder(), "log");
+        try {
+            if (oldYml.isFile()) {
+                if (!file.exists()) {
+                    java.nio.file.Files.move(oldYml.toPath(), file.toPath());
+                } else {
+                    java.nio.file.Files.delete(oldYml.toPath());   // moderation.yml (taken over from Forgebound) wins
+                }
+            }
+            if (oldLog.isFile()) {
+                if (logFile.exists()) {
+                    java.nio.file.Files.writeString(logFile.toPath(), java.nio.file.Files.readString(oldLog.toPath()),
+                            java.nio.file.StandardOpenOption.APPEND);
+                    java.nio.file.Files.delete(oldLog.toPath());
+                } else {
+                    java.nio.file.Files.move(oldLog.toPath(), logFile.toPath());
+                }
+            }
+        } catch (java.io.IOException ex) {
+            plugin.getLogger().warning("Could not rename the old moderation files: " + ex.getMessage());
+        }
     }
 
     private String cfg(String key, String def) {
