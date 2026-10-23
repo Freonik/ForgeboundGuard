@@ -86,6 +86,11 @@ Admins with `guard.notify` are told in chat when:
 
 Each kind of alert comes at most once every 5 minutes.
 
+Every hour (5 minutes after start the first time) the console also gets a `[Perf]` line: TPS, MSPT, the worst
+tick, RAM, players, loaded chunks and entities per world. The TPS, RAM and player numbers include the worst
+values since the previous line. Low TPS and full memory are written to the console as well.
+Set `watchdog.perf-log-minutes` (0 = off).
+
 ## X-ray hints
 
 Guard counts the **diamond and ancient debris veins** a player finds against the plain stone, deepslate and

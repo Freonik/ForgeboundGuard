@@ -24,6 +24,13 @@ public final class Watchdog implements Listener {
     private final ForgeboundGuard plugin;
     private BukkitTask task;
     private final Map<String, Long> lastAlert = new ConcurrentHashMap<>();
+    // performance numbers collected between two [Perf] lines (one sample every 30 s)
+    private final long started = System.currentTimeMillis();
+    private long nextPerf = started + 5 * 60_000L;
+    private double minTps = 20;
+    private double maxMspt;
+    private int maxMemory;
+    private int maxPlayers;
 
     public Watchdog(ForgeboundGuard plugin) {
         this.plugin = plugin;
@@ -61,6 +68,7 @@ public final class Watchdog implements Listener {
         if (!on()) {
             return;
         }
+        sample();
         double tps = Bukkit.getTPS()[0];
         double warn = plugin.getConfig().getDouble("watchdog.tps-below", 15);
         if (tps < warn && due("tps")) {
@@ -86,6 +94,9 @@ public final class Watchdog implements Listener {
                                 + " run tp @s " + x + " ~ " + z)));
             }
             alert(msg);
+            plugin.getLogger().warning(String.format(java.util.Locale.ROOT, "[Perf] Low TPS %.1f, MSPT %.1f%s", tps,
+                    Bukkit.getAverageTickTime(), worst != null ? ", most entities " + most + " in " + worst.getWorld().getName()
+                            + " " + (worst.getX() * 16 + 8) + " " + (worst.getZ() * 16 + 8) : ""));
         }
         Runtime rt = Runtime.getRuntime();
         long used = rt.totalMemory() - rt.freeMemory();
@@ -93,7 +104,55 @@ public final class Watchdog implements Listener {
         if (percent >= plugin.getConfig().getInt("watchdog.memory-above-percent", 90) && due("memory")) {
             alert(ForgeboundGuard.color("&8[&cWatchdog&8] &cMemory " + percent + " % full &7("
                     + used / 1048576 + " / " + rt.maxMemory() / 1048576 + " MB)"));
+            plugin.getLogger().warning("[Perf] Memory " + percent + " % full (" + used / 1048576 + " / "
+                    + rt.maxMemory() / 1048576 + " MB)");
         }
+    }
+
+    /** One sample every 30 s; every perf-log-minutes the console gets a [Perf] line with the period's worst values. */
+    private void sample() {
+        double tps = Math.min(20, Bukkit.getTPS()[0]);
+        long worstTick = 0;
+        for (long t : Bukkit.getTickTimes()) {
+            worstTick = Math.max(worstTick, t);
+        }
+        Runtime rt = Runtime.getRuntime();
+        int memory = (int) ((rt.totalMemory() - rt.freeMemory()) * 100 / Math.max(1, rt.maxMemory()));
+        minTps = Math.min(minTps, tps);
+        maxMspt = Math.max(maxMspt, worstTick / 1_000_000.0);
+        maxMemory = Math.max(maxMemory, memory);
+        maxPlayers = Math.max(maxPlayers, Bukkit.getOnlinePlayers().size());
+        int every = plugin.getConfig().getInt("watchdog.perf-log-minutes", 60);
+        long now = System.currentTimeMillis();
+        if (every <= 0 || now < nextPerf) {
+            return;
+        }
+        nextPerf = now + every * 60_000L;
+        plugin.getLogger().info(perfLine(tps, rt));
+        minTps = 20;
+        maxMspt = 0;
+        maxMemory = 0;
+        maxPlayers = 0;
+    }
+
+    private String perfLine(double tps, Runtime rt) {
+        StringBuilder worlds = new StringBuilder();
+        int chunks = 0;
+        int entities = 0;
+        for (World w : Bukkit.getWorlds()) {
+            int c = w.getChunkCount();
+            int e = w.getEntityCount();
+            chunks += c;
+            entities += e;
+            worlds.append(worlds.isEmpty() ? "" : ", ").append(w.getName()).append(' ').append(c).append('/').append(e);
+        }
+        long used = (rt.totalMemory() - rt.freeMemory()) / 1048576;
+        long up = (System.currentTimeMillis() - started) / 60_000L;
+        return String.format(java.util.Locale.ROOT,
+                "[Perf] TPS %.1f (min %.1f), MSPT %.1f (worst tick %.0f ms), RAM %d/%d MB (max %d %%), players %d (max %d),"
+                        + " chunks %d, entities %d [%s chunks/entities], uptime %dh%02dm",
+                tps, minTps, Bukkit.getAverageTickTime(), maxMspt, used, rt.maxMemory() / 1048576, maxMemory,
+                Bukkit.getOnlinePlayers().size(), maxPlayers, chunks, entities, worlds, up / 60, up % 60);
     }
 
     /** Errors thrown inside plugins (events, commands, tasks). */

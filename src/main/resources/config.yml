@@ -82,6 +82,9 @@ watchdog:
   memory-above-percent: 90
   plugin-errors: true
   cooldown-seconds: 300
+  # every N minutes a [Perf] line in the console: TPS, MSPT, RAM, players, chunks, entities (worst values since
+  # the last line). The first one comes 5 minutes after start. 0 = off
+  perf-log-minutes: 60
 
 # ------------------------------------------------------------
 #  X-RAY HINTS
